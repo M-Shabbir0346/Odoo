@@ -1,0 +1,61 @@
+#Step 1 — Installing Docker Compose
+#To install the docker-compose command line tool, refresh your package list, then install the package using apt:
+
+sudo apt update
+sudo apt install docker-compose
+
+#Step 2 — Running Odoo and PostgreSQL with Docker Compose
+#To get started creating your Odoo and PostgreSQL containers, create a directory called odoo in your home directory to store the files that you will create in this tutorial. You’ll use this directory to store all the files that you need to run Odoo.
+
+#Run the following commands to create the directory and then cd into it:
+
+mkdir ~/odoo
+cd ~/odoo
+#Now open a new blank YAML file called docker-compose.yml using nano or your preferred editor:
+
+nano docker-compose.yml
+#You will use this file with the docker-compose command to start your Odoo and PostgreSQL containers and link them together. Add the following lines to the file:
+
+#docker-compose.yml
+version: '3'
+services:
+  odoo:
+    image: odoo:15.0
+    env_file: .env
+    depends_on:
+      - postgres
+    ports:
+      - "127.0.0.1:8069:8069"
+    volumes:
+      - data:/var/lib/odoo
+  postgres:
+    image: postgres:13
+    env_file: .env
+    volumes:
+      - db:/var/lib/postgresql/data/pgdata
+
+volumes:
+  data:
+  db:
+#The Odoo and PostgreSQL containers use environment variables to configure themselves. The docker-compose.yml file specifies the env_file directive for both services. That directive then includes the referenced file that contains the variables that each service needs to run.
+#This approach is generally recommended instead of adding environment variables to the docker-compose.yml file directly, sinceit is a good practice to keep passwords out of your docker-compose.yml file. This approach is especially applicable if you’ll be committing your files to a Git repository or another source control system.
+#Open a new .env file with nano:
+
+nano .env
+#Add the following lines into the file, substituting in a POSTGRES_USER and POSTGRES_PASSWORD of your choice in place of the highlighted values:
+
+# postgresql environment variables
+POSTGRES_DB=postgres
+POSTGRES_PASSWORD=a_strong_password_for_user
+POSTGRES_USER=odoo
+PGDATA=/var/lib/postgresql/data/pgdata
+
+# odoo environment variables
+HOST=postgres
+USER=odoo
+PASSWORD=a_strong_password_for_user
+#To generate a password for Odoo and PostgreSQL, use the openssl command, which should be available on most Linux systems. Run the following command on your server to generate a random set of bytes and print a base64 encoded version that you can use as a password:
+
+$openssl rand -base64 30
+
+docker-compose up -d
